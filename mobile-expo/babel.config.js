@@ -3,6 +3,7 @@ module.exports = function (api) {
   return {
     plugins: [
       ["react-native-worklets-core/plugin"], 
+      ["inline-import", { "extensions": [".sql"] }]
     ],
     presets: [['babel-preset-expo']],
   };
