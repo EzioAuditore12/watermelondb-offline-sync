@@ -7,7 +7,7 @@ export const pushChangesResponseBodySchema = z.object({
       recordId: z.string(),
       serverId: z.string(),
       serverUpdatedAt: z.number(),
-      error: z.string().nullable(),
+      error: z.string().optional(),
     })
   ),
 });

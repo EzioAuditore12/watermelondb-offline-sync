@@ -13,6 +13,12 @@ const syncEngine = new SyncEngine({
   conflictStrategy: ConflictStrategy.LAST_WRITE_WINS,
 });
 
-await syncEngine.initialize();
+export async function initializeSyncEngine() {
+  try {
+    await syncEngine.initialize();
+  } catch (error) {
+    console.error('Failed to initialize sync engine:', error);
+  }
+}
 
 export default syncEngine;

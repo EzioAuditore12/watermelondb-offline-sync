@@ -1,7 +1,5 @@
 import { Database, type TableSchema } from '@nozbe/watermelondb';
-import {
-  syncQueueTableSchema,
-} from '@loonylabs/react-native-offline-sync';
+import { syncQueueTableSchema, SyncQueueItemModel, createTableSchemaWithSync } from '@loonylabs/react-native-offline-sync';
 
 import { createAdapter } from './adapter';
 import { migrations } from './migrations';
@@ -12,9 +10,12 @@ import { Task } from './models/task';
 
 const tables: TableSchema[] = [syncQueueTableSchema, TaskTable];
 
-const models = [Task];
+const models = [Task, SyncQueueItemModel];
 
 const schema = createSchema(tables);
+
+console.log('TaskTable:', TaskTable);
+console.log('Sync QueueTable', syncQueueTableSchema);
 
 export const database = new Database({
   adapter: createAdapter(schema, migrations),
