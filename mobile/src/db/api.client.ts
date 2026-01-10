@@ -16,7 +16,7 @@ export const apiClient: ApiClient = {
   },
   push: async (payload) => {
 
-    console.log()
+    console.log(payload.changes)
 
     const { results, success } = await pushChangesApi(payload as any);
 

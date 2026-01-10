@@ -53,19 +53,16 @@ export class TaskSevice {
     // Group the flat list of operations by type
     for (const change of changes) {
       if (change.tableName === "tasks") {
-        const taskData = { ...change.data, id: change.recordId };
+        // Assert that the combination of change.data and recordId matches our TaskRequest shape
+        const taskData = { ...change.data, id: change.recordId } as TaskRequest;
 
         switch (change.operation) {
           case "CREATE":
             created.push(taskData);
             break;
           case "UPDATE":
-            // FALLLBACK LOGIC:
-            // If the client sends an UPDATE but lacks the 'server_id', we cannot identify
-            // the record in MongoDB (since we use _id).
-            // In this case, we treat it as a CREATE to ensure the data is saved
-            // and the client gets a fresh server_id.
-            if ((change.data as any).server_id) {
+            // FIX: Now TypeScript knows server_id exists on TaskRequest
+            if (taskData.server_id) {
               updated.push(taskData);
             } else {
               console.warn(
@@ -150,7 +147,8 @@ export class TaskSevice {
     for (const task of tasks) {
       console.log(`Updating task (Client ID: ${task.id})`);
       try {
-        const serverId = (task as any).server_id;
+        // FIX: No need for (task as any) anymore
+        const serverId = task.server_id;
 
         // Double check, though logic in pushChanges should prevent this
         if (!serverId) {

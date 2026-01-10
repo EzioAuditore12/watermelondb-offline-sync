@@ -49,7 +49,6 @@ export function EditTaskForm({ className, data, ...props }: EditTaskFormProps) {
 
   // Renamed argument to 'formData' to avoid confusion with the 'data' prop
   const onSubmit = async (formData: CreateTask) => {
-    console.log(formData);
 
     execute('tasks', SyncOperation.UPDATE, async (collection) => {
       // 1. Find the record by ID

@@ -15,9 +15,11 @@ import { createTaskSchema, type CreateTask } from '@/schemas/create-task.schema'
 
 import { database } from '@/db';
 import syncEngine from '@/db/sync';
+import { TASK_TABLE_NAME } from '@/db/tables/task.table';
+import { Collection } from '@nozbe/watermelondb';
+import { Task } from '@/db/models/task';
 
-
-export function TaskForm({ className,  ...props }: ViewProps) {
+export function TaskForm({ className, ...props }: ViewProps) {
   const {
     control,
     handleSubmit,
@@ -31,12 +33,12 @@ export function TaskForm({ className,  ...props }: ViewProps) {
     resolver: zodResolver(createTaskSchema),
   });
 
-  const { execute, isOptimistic } = useOptimisticUpdate(database, syncEngine);
+  const { execute } = useOptimisticUpdate(database, syncEngine);
 
   const onSubmit = async (data: CreateTask) => {
-    execute('tasks', SyncOperation.CREATE, async (collection) => {
+    execute(TASK_TABLE_NAME, SyncOperation.CREATE, async (collection: Collection<Task>) => {
       // @ts-ignore
-      return await collection.create((task: Task) => {
+      return await collection.create((task) => {
         task.name = data.name;
         task.isCompleted = data.isCompleted;
         task.createdAt = new Date();

@@ -14,9 +14,6 @@ const models = [Task, SyncQueueItemModel];
 
 const schema = createSchema(tables);
 
-console.log('TaskTable:', TaskTable);
-console.log('Sync QueueTable', syncQueueTableSchema);
-
 export const database = new Database({
   adapter: createAdapter(schema, migrations),
   modelClasses: models,

@@ -10,7 +10,7 @@ const syncEngine = new SyncEngine({
   tables: [TASK_TABLE_NAME],
   apiClient,
   syncInterval: 5 * 60 * 1000, // 5 minutes
-  conflictStrategy: ConflictStrategy.LAST_WRITE_WINS,
+  conflictStrategy: ConflictStrategy.SERVER_WINS,
 });
 
 export async function initializeSyncEngine() {

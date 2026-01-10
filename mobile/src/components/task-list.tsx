@@ -8,6 +8,7 @@ import { TASK_TABLE_NAME } from '@/db/tables/task.table';
 
 import { TaskCard } from './task-card';
 import { Text } from './ui/text';
+import { View } from 'react-native';
 
 interface TaskListProps extends Omit<
   FlashListProps<Task>,
@@ -24,9 +25,11 @@ const enhance = withObservables([], () => ({
 function TaskList({ className, isFetchingNextPage, data, ...props }: TaskListProps) {
   if (!data || data.length === 0) {
     return (
-      <Text variant={'h1'} className="text-center text-red-400">
-        No tasks found.
-      </Text>
+      <View className="flex-1 items-center justify-center">
+        <Text variant={'h1'} className="text-center text-red-400">
+          No tasks found.
+        </Text>
+      </View>
     );
   }
 
