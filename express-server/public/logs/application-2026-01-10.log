@@ -250,3 +250,5 @@
 2026-01-10T17:52:02.895Z [32minfo[39m: POST /task/sync/push
 2026-01-10T17:52:02.953Z [32minfo[39m: GET /task/sync/pull
 2026-01-10T17:56:02.970Z [32minfo[39m: GET /task/sync/pull
+2026-01-10T17:56:25.793Z [32minfo[39m: POST /task/sync/push
+2026-01-10T17:56:25.935Z [32minfo[39m: GET /task/sync/pull
