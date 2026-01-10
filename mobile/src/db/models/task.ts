@@ -1,12 +1,13 @@
 import { Model } from '@nozbe/watermelondb';
 import { field, text, date } from '@nozbe/watermelondb/decorators';
 
+// @ts-ignore
 export class Task extends Model {
   static table = 'tasks';
 
   @text('name') name!: string;
-  @field('is_completed') is_completed!: boolean;
-  @date('created_at') created_at!: number;
+  @field('is_completed') isCompleted!: boolean;
+  @date('created_at') createdAt!: Date;
 
   // ⬇️ SYNC FIELDS (Required by @loonylabs/react-native-offline-sync)
 
@@ -17,5 +18,5 @@ export class Task extends Model {
   // This field definition shadows the read-only 'syncStatus' getter from the base Model class,
   // allowing the sync engine to write to it.
   // @ts-ignore
-  @text('sync_status') syncStatus?: string;
+  @text('sync_status') syncStatus!: SyncStatus;
 }

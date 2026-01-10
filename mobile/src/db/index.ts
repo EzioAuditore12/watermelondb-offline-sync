@@ -1,5 +1,5 @@
 import { Database, type TableSchema } from '@nozbe/watermelondb';
-import { syncQueueTableSchema, SyncQueueItemModel, createTableSchemaWithSync } from '@loonylabs/react-native-offline-sync';
+import { syncQueueTableSchema, SyncQueueItemModel } from '@loonylabs/react-native-offline-sync';
 
 import { createAdapter } from './adapter';
 import { migrations } from './migrations';

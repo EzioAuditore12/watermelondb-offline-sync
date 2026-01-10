@@ -15,6 +15,9 @@ export const apiClient: ApiClient = {
     return { changes, timestamp };
   },
   push: async (payload) => {
+
+    console.log()
+
     const { results, success } = await pushChangesApi(payload as any);
 
     return { results, success };

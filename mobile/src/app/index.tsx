@@ -1,66 +1,38 @@
 import { View } from 'react-native';
-import {
-  useSyncEngine,
-  OfflineBanner,
-  useOptimisticUpdate,
-  SyncOperation,
-} from '@loonylabs/react-native-offline-sync';
 
-import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
+import { EnhancedTaskList } from '@/components/task-list';
+import { TaskForm } from '@/components/task-form';
+import { Stack } from 'expo-router';
+import { useSyncEngine } from '@loonylabs/react-native-offline-sync';
 import syncEngine from '@/db/sync';
-import { database } from '@/db';
-import { Task } from '@/db/models/task';
 
 export default function HomeScreen() {
   const { sync, syncStatus, pendingChanges, isSyncing } = useSyncEngine(syncEngine);
 
-  const { execute, isOptimistic } = useOptimisticUpdate(database, syncEngine);
-
-  const createTask = async () => {
-    return execute('tasks', SyncOperation.CREATE, async (collection) => {
-      // @ts-ignore
-      return await collection.create((task: Task) => {
-        task.name = 'Hello';
-        task.is_completed = true;
-        task.created_at = Date.now();
-      });
-    });
-  };
-
-  const fetchAndLogTasks = async () => {
-    const tasksCollection = database.collections.get<Task>('tasks');
-    const tasks = await tasksCollection.query().fetch();
-
-    console.log('--- Fetched Tasks ---');
-    tasks.forEach((task) => {
-      console.log({
-        id: task.id,
-        name: task.name,
-        syncStatus: task.syncStatus,
-        _raw: task._raw,
-      });
-    });
-    console.log('Total tasks:', tasks.length);
-    console.log('---------------------');
-  };
-
   return (
-    <View className="flex-1 items-center justify-center gap-y-2">
-      <OfflineBanner networkDetector={syncEngine.getNetworkDetector()} />
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: 'Tasks',
+          headerRight: () => (
+            <Button onPress={sync} disabled={isSyncing}>
+              <Text> {isSyncing ? 'Syncing...' : `Sync (${pendingChanges} pending)`}</Text>
+            </Button>
+          ),
+        }}
+      />
+      <View className="flex-1 p-2">
+        <TaskForm className="w-full max-w-3xl self-center" />
 
-      <Button onPress={createTask}>
-        <Text>Create task</Text>
-      </Button>
+        <Button variant={'destructive'}>
+          <Text>Clear All Tasks</Text>
+        </Button>
 
-      <Button onPress={fetchAndLogTasks}>
-        <Text>Log Tasks to Console</Text>
-      </Button>
-
-      <Button onPress={sync} disabled={isSyncing}>
-        <Text>{isSyncing ? 'Syncing...' : `Sync (${pendingChanges} pending)`}</Text>
-      </Button>
-    </View>
+        <EnhancedTaskList />
+      </View>
+    </>
   );
 }
