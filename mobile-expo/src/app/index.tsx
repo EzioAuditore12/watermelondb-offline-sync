@@ -1,73 +1,26 @@
-import { Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
+import { RefreshControl, View } from 'react-native';
 
-import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import { useConnectivity } from '@/hooks/use-connectivity';
 
-import { db, migrations } from '@/db';
+import { useItems } from '@/db/sync/use-items';
 
-import { usersTable } from '@/db/schema';
+import { Text } from '@/components/ui/text';
 
 export default function App() {
-  const { success, error } = useMigrations(db, migrations);
-  const [items, setItems] = useState<typeof usersTable.$inferSelect[] | null>(null);
+  const { isOnline } = useConnectivity();
 
-  useEffect(() => {
-    if (!success) return;
-
-    (async () => {
-      await db.delete(usersTable);
-
-      await db.insert(usersTable).values([
-        {
-            name: 'John',
-            age: 30,
-            email: 'john@example.com',
-        },
-      ]);
-
-      const users = await db.select().from(usersTable);
-      setItems(users);
-    })();
-  }, [success]);
-
-  if (error) {
-    return (
-      <View>
-        <Text>Migration error: {error.message}</Text>
-      </View>
-    );
-  }
-
-  if (!success) {
-    return (
-      <View>
-        <Text>Migration is in progress...</Text>
-      </View>
-    );
-  }
-
-  if (items === null || items.length === 0) {
-    return (
-      <View>
-        <Text>Empty</Text>
-      </View>
-    );
-  }
+  const { items, isRefreshing, refresh } = useItems({
+    shouldFetchRemote: isOnline,
+  });
 
   return (
-    <View
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-      }}
-    >
-      {items.map((item) => (
-        <Text key={item.id}>{item.email}</Text>
-      ))}
+    <View className="flex-1 p-2">
+      <FlashList
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} />}
+        data={items}
+        renderItem={({ item }) => <Text>{item.title}</Text>}
+      />
     </View>
   );
 }

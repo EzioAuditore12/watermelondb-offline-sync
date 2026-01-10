@@ -1,8 +1,11 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const usersTable = sqliteTable("users", {
-  id: int().primaryKey({ autoIncrement: true }),
-  name: text().notNull(),
-  age: int().notNull(),
-  email: text().notNull().unique(),
+export const items = sqliteTable('items', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  status: text('status').notNull(), // 'active' | 'archived'
+  updatedAt: integer('updated_at').notNull(),
 });
+
+export type ItemEntity = typeof items.$inferSelect;
+export type NewItemEntity = typeof items.$inferInsert
