@@ -12,5 +12,6 @@ export const TaskTable = tableSchema({
     { name: 'server_updated_at', type: 'number', isOptional: true },
     { name: 'sync_status', type: 'string', isOptional: true },
     { name: 'last_sync_error', type: 'string', isOptional: true },
+    { name: 'deleted_at', type: 'number', isOptional: true },
   ],
 });

@@ -31,9 +31,8 @@ export function TaskCard({ className, data, onPress, ...props }: TaskCardProps) 
   const { execute } = useOptimisticUpdate(database, syncEngine);
 
   const handleDelete = async () => {
-    execute(TASK_TABLE_NAME, SyncOperation.DELETE, async (collection: Collection<Task>) => {
+    execute(TASK_TABLE_NAME, SyncOperation.UPDATE, async (collection: Collection<Task>) => {
       const task = await collection.find(id);
-      await task.markAsDeleted();
       return task;
     });
   };
@@ -59,7 +58,7 @@ export function TaskCard({ className, data, onPress, ...props }: TaskCardProps) 
           <CardHeader className="relative">
             <Text>{name}</Text>
 
-            <Badge className='absolute right-22' variant={syncStatusBadge.variant}>
+            <Badge className="absolute right-22" variant={syncStatusBadge.variant}>
               <Text>{syncStatusBadge.text}</Text>
             </Badge>
 

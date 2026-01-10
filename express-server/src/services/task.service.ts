@@ -13,6 +13,7 @@ export class TaskSevice {
     lastSyncAt,
     tables,
   }: PullChangesRequestParams): Promise<PullChangesResponse> {
+    // 1. Find ALL changed records (including soft-deleted ones)
     const tasks = await Task.find({
       updated_at: { $gt: new Date(lastSyncAt) },
     }).lean();
@@ -21,19 +22,23 @@ export class TaskSevice {
 
     console.log(`Found ${tasks.length} tasks to sync.`);
 
-    if (tasks.length > 0) {
-      console.log("First task payload:", JSON.stringify(tasks[0], null, 2));
-    }
+    // 2. Separate Active vs Deleted records
+    // If deleted_at exists, it goes into the 'deleted' list for WatermelonDB
+    const deletedTasks = mappedTasks.filter((t) => t.deleted_at != null);
+    const activeTasks = mappedTasks.filter((t) => t.deleted_at == null);
 
-    const created = mappedTasks.filter((t) => t.created_at > lastSyncAt);
-    const updated = mappedTasks.filter((t) => t.created_at <= lastSyncAt);
+    const created = activeTasks.filter((t) => t.created_at > lastSyncAt);
+    const updated = activeTasks.filter((t) => t.created_at <= lastSyncAt);
+
+    // Map objects to just IDs for the 'deleted' array
+    const deletedIds = deletedTasks.map((t) => t.id);
 
     return {
       changes: {
         tasks: {
           created,
           updated,
-          deleted: [],
+          deleted: deletedIds,
         },
       },
       timestamp: Date.now(),
@@ -48,7 +53,8 @@ export class TaskSevice {
 
     const created: TaskRequest[] = [];
     const updated: TaskRequest[] = [];
-    const deleted: string[] = [];
+    // FIX: Changed type to store identifiers object instead of just string
+    const deleted: { recordId: string; serverId?: string | null }[] = [];
 
     // Group the flat list of operations by type
     for (const change of changes) {
@@ -61,7 +67,6 @@ export class TaskSevice {
             created.push(taskData);
             break;
           case "UPDATE":
-            // FIX: Now TypeScript knows server_id exists on TaskRequest
             if (taskData.server_id) {
               updated.push(taskData);
             } else {
@@ -72,7 +77,11 @@ export class TaskSevice {
             }
             break;
           case "DELETE":
-            deleted.push(change.recordId);
+            // FIX: Extract server_id from data so we can delete the correct document in MongoDB
+            deleted.push({
+              recordId: change.recordId,
+              serverId: taskData.server_id,
+            });
             break;
         }
       }
@@ -188,45 +197,53 @@ export class TaskSevice {
     return results;
   }
 
+  // FIX: Perform Soft Delete (Tombstone) on Server
   private async deleteTask(
-    ids: string[]
+    items: { recordId: string; serverId?: string | null }[]
   ): Promise<PushChangesResponseBody["results"]> {
-    console.log(`Processing ${ids.length} deleted tasks...`);
+    console.log(`Processing ${items.length} deleted tasks (Soft Delete)...`);
     const results: PushChangesResponseBody["results"] = [];
 
-    for (const id of ids) {
-      console.log(`Deleting task: ${id}`);
+    for (const item of items) {
+      const idToDelete = item.serverId || item.recordId;
+      console.log(`Soft cancelling task: ${idToDelete}`);
+
       try {
-        // Prevent CastError if the ID is a UUID (local ID) instead of ObjectId
-        if (!mongoose.isValidObjectId(id)) {
-          console.warn(
-            `ID ${id} is not a valid ObjectId. Skipping server delete.`
-          );
-          // Return success so client removes it from its sync queue
+        if (!idToDelete || !mongoose.isValidObjectId(idToDelete)) {
+          console.warn(`ID ${idToDelete} is not valid. Skipping.`);
           results.push({
-            recordId: id,
-            serverId: id,
+            recordId: item.recordId,
+            serverId: item.serverId || item.recordId,
             serverUpdatedAt: Date.now(),
-            error: undefined,
+            error: undefined, // Treat as success to clear queue
           });
           continue;
         }
 
-        await Task.deleteOne({ _id: id });
+        // KEY CHANGE: Don't deleteOne(). Update deleted_at instead.
+        // This preserves the record so other clients can fetch it during sync.
+        await Task.updateOne(
+          { _id: idToDelete },
+          {
+            $set: {
+              deleted_at: new Date(),
+              updated_at: new Date(), // Important: update timestamp so sync queries find it
+            },
+          }
+        );
 
         results.push({
-          recordId: id,
-          serverId: id,
+          recordId: item.recordId,
+          serverId: item.serverId || item.recordId,
           serverUpdatedAt: Date.now(),
-          error: undefined,
         });
       } catch (error: any) {
-        console.error(`Error deleting task ${id}:`, error);
+        console.error(`Error deleting task ${item.recordId}:`, error);
         results.push({
-          recordId: id,
-          serverId: id,
+          recordId: item.recordId,
+          serverId: item.serverId || item.recordId,
           serverUpdatedAt: Date.now(),
-          error: error.message || "Unknown error",
+          error: error.message,
         });
       }
     }

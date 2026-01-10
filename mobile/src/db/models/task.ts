@@ -19,5 +19,7 @@ export class Task extends Model {
   // This field definition shadows the read-only 'syncStatus' getter from the base Model class,
   // allowing the sync engine to write to it.
   // @ts-ignore
-  @text('sync_status') syncStatus!: SyncStatus
+  @text('sync_status') syncStatus!: SyncStatus;
+
+  @date('deleted_at') deletedAt?: Date;
 }
