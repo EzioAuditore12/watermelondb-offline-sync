@@ -4,7 +4,7 @@
     "slug": "mobile-watermelondb",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./public/images/icon.png",
     "scheme": "mobilewatermelondb",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,28 +14,50 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./public/images/android-icon-foreground.png",
+        "backgroundImage": "./public/images/android-icon-background.png",
+        "monochromeImage": "./public/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dakshpurohit.mobilewatermelondb"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./public/images/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./public/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#000000"
+          }
+        }
+      ],
+      ["@lovesworking/watermelondb-expo-plugin-sdk-52-plus"],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "extraPods": [
+              {
+                "name": "simdjson",
+                "configurations": ["Debug", "Release"],
+                "path": "../node_modules/@nozbe/simdjson",
+                "modular_headers": true
+              }
+            ]
+          },
+          "android": {
+            "packagingOptions": {
+              "pickFirst": ["**/libc++_shared.so"]
+            }
           }
         }
       ]
