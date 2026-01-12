@@ -233,14 +233,28 @@ export class PullSynchronizer {
 
       // Convert camelCase to snake_case for WatermelonDB
       const fieldName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      record[fieldName] = serverData[key];
+
+      // Use _raw to set fields directly, bypassing setters/getters
+      if (record._raw) {
+        record._raw[fieldName] = serverData[key];
+      } else {
+        record[fieldName] = serverData[key];
+      }
     });
 
     // Update sync metadata
-    record.serverId = serverData.id;
-    record.serverUpdatedAt = serverData.updated_at || Date.now();
-    record.syncStatus = 'synced';
-    record.lastSyncError = null;
+    if (record._raw) {
+      record._raw.server_id = serverData.id;
+      record._raw.server_updated_at = serverData.updated_at || Date.now();
+      record._raw.sync_status = 'synced';
+      record._raw.last_sync_error = null;
+    } else {
+      record.serverId = serverData.id;
+      record.serverUpdatedAt = serverData.updated_at || Date.now();
+      // Fix: Use offlineSyncStatus instead of commented out syncStatus
+      record.offlineSyncStatus = 'synced';
+      record.lastSyncError = null;
+    }
   }
 
   /**

@@ -163,7 +163,8 @@ export class PushSynchronizer {
           if (serverUpdatedAt) {
             rec.serverUpdatedAt = serverUpdatedAt;
           }
-          rec.syncStatus = 'synced';
+          // Use offlineSyncStatus instead of syncStatus (which is a read-only getter on Model)
+          rec.offlineSyncStatus = 'synced';
           rec.lastSyncError = null;
         });
       });
