@@ -60,6 +60,7 @@ function RawTaskCard({ className, data, onPress, ...props }: TaskCardProps) {
         <Card className={cn(className)} {...props}>
           <CardHeader className="relative">
             <Text>{name}</Text>
+            <Text>{`(${id})`}</Text>
 
             <Badge className="absolute right-22" variant={syncStatusBadge.variant}>
               <Text>{syncStatusBadge.text}</Text>

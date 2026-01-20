@@ -1,6 +1,7 @@
 import { View, type ViewProps } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import crypto from 'react-native-nitro-crypto';
 
 import { SyncOperation } from '@/db/types';
 import { useOptimisticUpdate } from '@/db/hooks/use-optimistic-update';
@@ -39,8 +40,8 @@ export function TaskForm({ className, ...props }: ViewProps) {
 
   const onSubmit = async (data: CreateTask) => {
     execute(TASK_TABLE_NAME, SyncOperation.CREATE, async (collection: Collection<TaskModel>) => {
-      // @ts-ignore
       return await collection.create((task) => {
+        task._raw.id = crypto.randomUUID();
         task.name = data.name;
         task.isCompleted = data.isCompleted;
         task.createdAt = new Date();

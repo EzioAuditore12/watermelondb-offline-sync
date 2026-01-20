@@ -12,11 +12,12 @@ export const apiClient: ApiClient = {
       tables: payload.tables,
     });
 
+    console.log(changes.tasks);
+
     return { changes, timestamp };
   },
   push: async (payload) => {
-
-    console.log(payload.changes)
+    console.log(payload.changes);
 
     const { results, success } = await pushChangesApi(payload as any);
 

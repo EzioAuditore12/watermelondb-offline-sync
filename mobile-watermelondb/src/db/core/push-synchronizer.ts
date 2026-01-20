@@ -1,4 +1,4 @@
-import { Database, Model } from '@nozbe/watermelondb';
+import { Database, Model, Q } from '@nozbe/watermelondb';
 import { SyncQueueManager } from './sync-queue-manager';
 import { ApiClient, PushPayload, SyncQueueItem } from '../types';
 import { createLogger } from '../utils/logger';
@@ -112,7 +112,8 @@ export class PushSynchronizer {
             item.tableName,
             item.recordId,
             result.serverId,
-            result.serverUpdatedAt
+            result.serverUpdatedAt,
+            item.operation // <--- PASS OPERATION HERE
           );
           await this.queueManager.markAsProcessed(item.id);
           pushedCount++;
@@ -149,11 +150,69 @@ export class PushSynchronizer {
     tableName: string,
     recordId: string,
     serverId?: string,
-    serverUpdatedAt?: number
+    serverUpdatedAt?: number,
+    operation?: string // <--- ADD PARAMETER
   ): Promise<void> {
     try {
       await this.database.write(async () => {
         const collection = this.database.get<Model>(tableName);
+
+        // 1. CHECK IF WE NEED TO SWAP IDS (only for CREATE operations)
+        if (operation === 'CREATE' && serverId && serverId !== recordId) {
+          try {
+            const tempRecord = await collection.find(recordId);
+
+            // Create a COPY with the Server ID
+            await collection.create((newRecord) => {
+              // FORCE THE ID
+              newRecord._raw.id = serverId;
+
+              // Copy all fields from the temporary record
+              const rawData = tempRecord._raw;
+              Object.keys(rawData).forEach((key) => {
+                if (key !== 'id' && key !== '_status' && key !== '_changed') {
+                  // @ts-ignore
+                  newRecord._raw[key] = rawData[key];
+                }
+              });
+
+              // Apply sync metadata
+              // @ts-ignore
+              newRecord.serverId = serverId;
+              // @ts-ignore
+              newRecord.serverUpdatedAt = serverUpdatedAt;
+              // @ts-ignore
+              newRecord.offlineSyncStatus = 'synced';
+            });
+
+            // IMPORTANT: If there are other pending operations in queue for this record (e.g. UPDATE),
+            // update them to point to the new ID, otherwise they will fail.
+            try {
+              // Attempt to get queue collection - requires 'sync_queue' to be a registered Model
+              const queueCollection = this.database.get('sync_queue');
+              const pendingOps = await queueCollection
+                .query(Q.where('record_id', recordId))
+                .fetch();
+              for (const op of pendingOps) {
+                await op.update((r: any) => {
+                  r.recordId = serverId;
+                });
+              }
+            } catch (e) {
+              // Ignore if sync_queue model is not available
+            }
+
+            // Destroy the old temporary record
+            await tempRecord.destroyPermanently();
+
+            this.logger.log(`Swapped temp ID ${recordId} with server ID ${serverId}`);
+            return; // EXIT FUNCTION
+          } catch (swapError) {
+            this.logger.warn('ID Swap failed, falling back to simple update', swapError);
+          }
+        }
+
+        // 2. STANDARD UPDATE (If no swap needed)
         const record = await collection.find(recordId);
 
         await record.update((rec: any) => {
@@ -163,7 +222,6 @@ export class PushSynchronizer {
           if (serverUpdatedAt) {
             rec.serverUpdatedAt = serverUpdatedAt;
           }
-          // Use offlineSyncStatus instead of syncStatus (which is a read-only getter on Model)
           rec.offlineSyncStatus = 'synced';
           rec.lastSyncError = null;
         });
@@ -172,7 +230,6 @@ export class PushSynchronizer {
       this.logger.log(`Updated local record ${tableName}:${recordId}`);
     } catch (error) {
       this.logger.error(`Failed to update local record ${tableName}:${recordId}:`, error);
-      // Don't throw - we already removed from queue
     }
   }
 }

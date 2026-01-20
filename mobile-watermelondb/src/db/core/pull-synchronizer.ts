@@ -101,6 +101,10 @@ export class PullSynchronizer {
         } else {
           // Create new record
           await collection.create((record: any) => {
+            // FORCE local ID to match Server ID
+            if (record._raw) {
+              record._raw.id = serverData.id;
+            }
             this.applyServerData(record, serverData);
           });
         }
@@ -132,6 +136,10 @@ export class PullSynchronizer {
         } else {
           // Record doesn't exist locally - create it
           await collection.create((record: any) => {
+            // FORCE local ID to match Server ID
+            if (record._raw) {
+              record._raw.id = serverData.id;
+            }
             this.applyServerData(record, serverData);
           });
           updatedCount++;
